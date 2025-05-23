@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -9,6 +9,10 @@ interface ModalProps {
   variant?: 'default' | 'physics' | 'math' | 'chemistry';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   maxHeight?: string;
+  onNextTopic?: () => void;
+  onPreviousTopic?: () => void;
+  showNextButton?: boolean;
+  showPreviousButton?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({ 
@@ -18,7 +22,11 @@ export const Modal: React.FC<ModalProps> = ({
   description, 
   variant = 'physics', 
   size = 'lg',
-  maxHeight = '90vh'
+  maxHeight = '90vh',
+  onNextTopic,
+  onPreviousTopic,
+  showNextButton = false,
+  showPreviousButton = false
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -85,9 +93,30 @@ export const Modal: React.FC<ModalProps> = ({
         >
           <div className="p-8 prose prose-invert max-w-none">
             {formatDescription(description)}
-            {/* Add bottom padding space */}
             <div className="h-16"></div>
           </div>
+        </div>
+
+        <div className='flex justify-between p-4 bg-gray-800 rounded-b-xl'>
+          {showPreviousButton && onPreviousTopic && (
+            <button 
+              onClick={onPreviousTopic}
+              className='text-white font-medium bg-amber-600 px-6 py-2 hover:bg-amber-800 duration-400 rounded-md flex items-center gap-2'
+            >
+              <ChevronLeft size={20} />
+              Previous Topic
+            </button>
+          )}
+          
+          {showNextButton && onNextTopic && (
+            <button 
+              onClick={onNextTopic}
+              className='text-white font-medium bg-amber-600 px-6 py-2 hover:bg-amber-800 duration-400 rounded-md flex items-center gap-2 ml-auto'
+            >
+              Next Topic
+              <ChevronRight size={20} />
+            </button>
+          )}
         </div>
       </div>
     </div>

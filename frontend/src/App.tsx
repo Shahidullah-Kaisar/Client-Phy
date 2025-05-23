@@ -21,6 +21,8 @@ function App() {
   const [expandedSubtopic, setExpandedSubtopic] = useState<string | null>(null);
   const [selectedDescription, setSelectedDescription] = useState<string | null>(null);
   const [physicsData, setPhysicsData] = useState<PhysicsData[]>([]);
+  const [currentSubtopicIndex, setCurrentSubtopicIndex] = useState<number>(-1);
+  const [currentSubtopicList, setCurrentSubtopicList] = useState<{subtopic: string, description: string}[]>([]);
   const itemRefs = useRef<ItemRefs>({});
 
   useEffect(() => {
@@ -57,7 +59,6 @@ function App() {
   }, []);
 
   const scrollToItem = (id: string) => {
-    // Only scroll for branches and topics, not subtopics
     if (!id.startsWith('branch-') && !id.startsWith('topic-')) return;
 
     setTimeout(() => {
@@ -94,10 +95,52 @@ function App() {
     scrollToItem(`topic-${topic}`);
   };
 
-  const handleSubtopicClick = (subtopic: string, description: string) => {
+  const handleSubtopicClick = (subtopic: string, description: string, branch: string, topic?: string) => {
     setExpandedSubtopic(expandedSubtopic === subtopic ? null : subtopic);
     setSelectedDescription(description);
-    // No scrolling for subtopics
+    
+    // Get all subtopics for the current branch/topic
+    let subtopics: {subtopic: string, description: string}[] = [];
+    
+    if (topic) {
+      subtopics = physicsData
+        .filter(item => item.branch === branch && item.topic === topic)
+        .map(item => ({ subtopic: item.subtopic, description: item.description }));
+    } else {
+      subtopics = physicsData
+        .filter(item => item.branch === branch && !item.topic)
+        .map(item => ({ subtopic: item.subtopic, description: item.description }));
+    }
+    
+    setCurrentSubtopicList(subtopics);
+    
+    // Find current index
+    const index = subtopics.findIndex(item => item.subtopic === subtopic);
+    setCurrentSubtopicIndex(index);
+  };
+
+  const handlePreviousTopic = () => {
+    if (currentSubtopicIndex > 0) {
+      const prevIndex = currentSubtopicIndex - 1;
+      const prevSubtopic = currentSubtopicList[prevIndex];
+      setCurrentSubtopicIndex(prevIndex);
+      setExpandedSubtopic(prevSubtopic.subtopic);
+      setSelectedDescription(prevSubtopic.description);
+    }
+  };
+
+  const handleNextTopic = () => {
+    if (currentSubtopicIndex < currentSubtopicList.length - 1) {
+      const nextIndex = currentSubtopicIndex + 1;
+      const nextSubtopic = currentSubtopicList[nextIndex];
+      setCurrentSubtopicIndex(nextIndex);
+      setExpandedSubtopic(nextSubtopic.subtopic);
+      setSelectedDescription(nextSubtopic.description);
+    } else {
+      // Last subtopic reached
+      setCurrentSubtopicIndex(-1);
+      setSelectedDescription(null);
+    }
   };
 
   // Get unique branches
@@ -219,7 +262,7 @@ function App() {
                                 .map((item) => (
                                   <button
                                     key={item.subtopic}
-                                    onClick={() => handleSubtopicClick(item.subtopic, item.description)}
+                                    onClick={() => handleSubtopicClick(item.subtopic, item.description, branch, topic)}
                                     className="topic-glow bdr w-full p-2 text-left text-sm font-semibold rounded-lg transition-all duration-200"
                                   >
                                     <span className="text-white">{item.subtopic}</span>
@@ -236,10 +279,10 @@ function App() {
                           {getDirectSubtopics(branch).map((item) => (
                             <button
                               key={item.subtopic}
-                              onClick={() => handleSubtopicClick(item.subtopic, item.description)}
+                              onClick={() => handleSubtopicClick(item.subtopic, item.description, branch)}
                               className="bdr topic-glow w-full p-2 text-left font-semibold text-sm rounded-lg transition-all duration-200"
                             >
-                              <span className=" text-white">{item.subtopic}</span>
+                              <span className="text-white">{item.subtopic}</span>
                             </button>
                           ))}
                         </div>
@@ -255,9 +298,17 @@ function App() {
         {/* Description Modal */}
         <Modal
           isOpen={selectedDescription !== null}
-          onClose={() => setSelectedDescription(null)}
+          onClose={() => {
+            setSelectedDescription(null);
+            setCurrentSubtopicIndex(-1);
+          }}
           title={expandedSubtopic || ''}
           description={selectedDescription || ''}
+          onPreviousTopic={handlePreviousTopic}
+          onNextTopic={handleNextTopic}
+          showPreviousButton={currentSubtopicIndex > 0}
+          showNextButton={currentSubtopicIndex < currentSubtopicList.length - 1}
+         
         />
       </div>
     </div>
